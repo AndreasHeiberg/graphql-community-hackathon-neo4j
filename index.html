@@ -1,0 +1,114 @@
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<meta name="robots" content="noindex, nofollow">
+		<meta name="googlebot" content="noindex, nofollow">
+
+		<script type="text/javascript" src="https://unpkg.com/vue@latest/dist/vue.js"></script>
+
+		<style type="text/css">
+			#demo {
+			font-family: 'Helvetica', Arial, sans-serif;
+			}
+			a {
+			text-decoration: none;
+			color: #f66;
+			}
+			li {
+			line-height: 1.5em;
+			margin-bottom: 20px;
+			}
+			.author, .date {
+			font-weight: bold;
+			}
+		</style>
+
+		<title>Demo</title>
+
+		<script type="text/javascript">//<![CDATA[
+			window.onload=function(){
+				var apiURL = 'https://graphql.communitygraph.org/graphql/'
+
+				var demo = new Vue({
+					el: '#demo',
+					data: {
+						options: ['top viewed', 'most recent'],
+						currentOption: 'top viewed',
+						questions: null
+					},
+
+					created: function () {
+						this.fetchData()
+					},
+
+					watch: {
+						currentOption: 'fetchData'
+					},
+
+					filters: {
+						truncate: function (v) {
+							var newline = v.indexOf('\n')
+							return newline > 0 ? v.slice(0, newline) : v
+						},
+						formatDate: function (v) {
+							var t = new Date();
+							t.setSeconds(v);
+							return t.format("dd.mm.yyyy hh:MM:ss");
+						}
+					},
+
+					methods: {
+						fetchData: function () {
+						  var xhr = new XMLHttpRequest()
+						  var self = this
+						  xhr.open('POST', apiURL)
+						  xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+						  xhr.setRequestHeader("authorization", "Basic Z3JhcGhxbDpncmFwaHFs");
+						  xhr.setRequestHeader("accept", "application/json");
+						  xhr.onload = function () {
+						    self.commits = JSON.parse(xhr.responseText)
+						    console.log(self.commits[0].html_url)
+						  }
+						  xhr.send('{"query":"{\n  Question(is_answered: false, orderBy: [view_count_desc], first: 10) {\n    title\n    link\n  }\n}","variables":null,"operationName":null}')
+						}
+					}
+				})
+
+			}//]]> 
+		</script>
+	</head>
+
+	<body>
+		<div id="demo">
+			<h1>Commong Questions</h1>
+			<template v-for="option in options">
+				<input type="radio"
+				:id="option"
+				:value="option"
+				name="option"
+				v-model="currentOption">
+				<label :for="option">{{ option }}</label>
+			</template>
+			<p>vuejs/vue@{{ currentOption }}</p>
+			<ul>
+				<li v-for="question in questions">
+					<a :href="question.link" target="_blank" class="commit">
+						<span class="message">{{ question.title | truncate }}</span>
+					</a><br>
+					by <span class="author">{{ question.author.screen_name }}</span>
+					at <span class="date">{{ question.created | formatDate }}</span>
+				</li>
+			</ul>
+		</div>
+		
+		<script>
+			// tell the embed parent frame the height of the content
+			if (window.parent && window.parent.parent){
+				window.parent.parent.postMessage(["resultsFrame", {
+					height: document.body.getBoundingClientRect().height,
+					slug: "None"
+				}], "*")
+			}
+		</script>
+	</body>
+</html>
